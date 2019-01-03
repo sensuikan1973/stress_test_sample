@@ -1,0 +1,63 @@
+version: '3'
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: always
+    ports:
+      - 3000:3000
+    env_file:
+      - ./grafana.env
+  node-exporter:
+    image: quay.io/prometheus/node-exporter
+    container_name: node-exporter
+    restart: always
+    ports:
+      - 9100:9100
+    volumes:
+      - /proc:/host/proc
+      - /sys:/host/sys
+      - /:/rootfs
+  mysql:
+    container_name: mysql
+    build:
+      context: .
+      dockerfile: ./docker/mysql/Dockerfile
+    hostname: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_USER: root
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: sample_for_qiita
+    command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci --skip-character-set-client-handshake
+    volumes:
+      - "./docker/mysql/init/:/docker-entrypoint-initdb.d"
+  sample_docker_compose:
+    links:
+      - mysql
+    build:
+      context: .
+      dockerfile: ./docker/go/Dockerfile
+    container_name: sample_docker_compose
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/go/src/sample_docker_compose
+    command: sh ./start_app.sh
+  prom_mysql_exporter:
+    image: prom/mysqld-exporter
+    links:
+      - mysql
+    ports:
+      - '9104:9104'
+    environment:
+      DATA_SOURCE_NAME: root:password@(mysql:3306)/sample_for_qiita

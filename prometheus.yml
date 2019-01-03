@@ -1,0 +1,22 @@
+global:
+  scrape_interval:     10s
+  evaluation_interval: 10s
+  external_labels:
+      monitor: 'codelab-monitor'
+
+rule_files:
+#   - "/path/to/alert.rules"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['(your mac hostname):9100'] # FIXME: fix hostname
+  - job_name: mysql
+    static_configs:
+      - targets: ['prom_mysql_exporter:9104']
+  - job_name: 'go-server'
+    static_configs:
+      - targets: ['(your mac hostname):8080'] # FIXME: fix hostname
